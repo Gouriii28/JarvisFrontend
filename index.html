@@ -1120,31 +1120,27 @@ async function sendHeroMsg(){
 
     // Animate typing character by character
     let i = 0;
-    await new Promise(resolve => {
-      const iv = setInterval(() => {
-        bub.textContent += fullReply[i++];
-        msgs.scrollTop = msgs.scrollHeight;
-        if(i >= fullReply.length){ clearInterval(iv); resolve(); }
-      }, 18);
-    });
-
-
-
-    // Save to conversation history for context
-    heroHistory.push({ role: 'user', content: text });
-    heroHistory.push({ role: 'assistant', content: fullReply });
-    if(heroHistory.length > 20) heroHistory = heroHistory.slice(-20); // keep last 10 turns
-
-    addHeroLog('g', 'Response delivered');
-    document.getElementById('hero-status-msg').textContent = 'All systems nominal. Ready for input.';
+    const iv = setInterval(function() {
+      bub.textContent += fullReply.charAt(i);
+      i++;
+      msgs.scrollTop = msgs.scrollHeight;
+      if(i >= fullReply.length){
+        clearInterval(iv);
+        heroHistory.push({ role: 'user', content: text });
+        heroHistory.push({ role: 'assistant', content: fullReply });
+        if(heroHistory.length > 20) heroHistory = heroHistory.slice(-20);
+        addHeroLog('g', 'Response delivered');
+        document.getElementById('hero-status-msg').textContent = 'All systems nominal. Ready for input.';
+        heroBusy = false; arcThinking = false; hwActive = false;
+      }
+    }, 18);
 
   } catch(err){
     td.remove();
     msgs.appendChild(jd);
-    bub.textContent = `⚠ Connection error: ${err.message}. Check that the backend is running.`;
+    bub.textContent = 'Error: ' + err.message;
     document.getElementById('hero-status-msg').textContent = 'Connection error.';
     addHeroLog('o', 'Error');
-  } finally {
     heroBusy = false; arcThinking = false; hwActive = false;
   }
 }
