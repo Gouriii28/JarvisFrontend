@@ -1107,6 +1107,7 @@ async function sendHeroMsg(){
   jd.appendChild(av); jd.appendChild(bub);
 
   try {
+    console.log("Calling:", `${JARVIS_API}/chat`);
     const res = await fetch(`${JARVIS_API}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
