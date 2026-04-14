@@ -1062,7 +1062,7 @@ setInterval(()=>{
 
 // HERO CHAT — powered by real JARVIS backend
 // 👇 Replace this with your deployed backend URL (Render / Railway)
-const JARVIS_API = "https://jarvisbackend-production-4caf.up.railway.app";
+const JARVIS_API = "https://your-jarvis-backend.onrender.com";
 
 let heroBusy = false;
 let heroHistory = []; // keeps conversation context
@@ -1104,7 +1104,7 @@ async function sendHeroMsg(){
   jd.appendChild(av); jd.appendChild(bub);
 
   try {
-    const res = await fetch(`${JARVIS_API}/chat/stream`, {
+    const res = await fetch(`${JARVIS_API}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text, history: heroHistory })
@@ -1112,32 +1112,23 @@ async function sendHeroMsg(){
 
     if(!res.ok) throw new Error(`Server error: ${res.status}`);
 
+    const data = await res.json();
+    const fullReply = data.reply || '...';
+
     td.remove();
     msgs.appendChild(jd); msgs.scrollTop = msgs.scrollHeight;
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let fullReply = '';
+    // Animate typing character by character
+    let i = 0;
+    await new Promise(resolve => {
+      const iv = setInterval(() => {
+        bub.textContent += fullReply[i++];
+        msgs.scrollTop = msgs.scrollHeight;
+        if(i >= fullReply.length){ clearInterval(iv); resolve(); }
+      }, 18);
+    });
 
-    while(true){
-      const { done, value } = await reader.read();
-      if(done) break;
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
-      for(const line of lines){
-        const data = line.slice(6);
-        if(data === '[DONE]') break;
-        try {
-          const parsed = JSON.parse(data);
-          if(parsed.error){ bub.textContent = `⚠ ${parsed.error}`; break; }
-          if(parsed.token){
-            fullReply += parsed.token;
-            bub.textContent = fullReply;
-            msgs.scrollTop = msgs.scrollHeight;
-          }
-        } catch(e){}
-      }
-    }
+
 
     // Save to conversation history for context
     heroHistory.push({ role: 'user', content: text });
